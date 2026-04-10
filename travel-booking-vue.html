@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Réservation de voyage</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    }
+
+    #app { width: 100%; display: flex; justify-content: center; }
+
+    .card {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 20px;
+      padding: 2.25rem 1.75rem;
+      color: #fff;
+    }
+
+    .hdr { text-align: center; margin-bottom: 2rem; }
+    .hdr-icon { font-size: 2rem; display: block; margin-bottom: .4rem; }
+    .hdr h1 { font-size: 1.45rem; font-weight: 600; letter-spacing: -.02em; margin-bottom: .25rem; }
+    .hdr p { font-size: .85rem; color: rgba(255,255,255,.5); }
+
+    .fg { margin-bottom: 1.1rem; }
+    .fg label {
+      display: block;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.45);
+      margin-bottom: .4rem;
+    }
+
+    .iw { position: relative; }
+    .iw .ic {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .95rem;
+      pointer-events: none;
+    }
+
+    .iw select, .iw input {
+      width: 100%;
+      padding: .7rem .85rem .7rem 2.5rem;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: .9rem;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+
+    .iw select option { background: #1a1a2e; color: #fff; }
+    .iw input::placeholder { color: rgba(255,255,255,.3); }
+    .iw input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.45); cursor: pointer; }
+
+    .iw select:focus, .iw input:focus {
+      border-color: rgba(99,179,237,.7);
+      background: rgba(255,255,255,.12);
+      box-shadow: 0 0 0 3px rgba(99,179,237,.15);
+    }
+
+    .fg.err .iw select, .fg.err .iw input { border-color: rgba(252,129,74,.75); }
+
+    .emsg { font-size: .75rem; color: #fc814a; margin-top: .3rem; padding-left: 2px; }
+
+    .swap-row { display: flex; justify-content: center; margin: -.2rem 0 .4rem; }
+    .swap-btn {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, transform .35s;
+    }
+    .swap-btn:hover { background: rgba(255,255,255,.2); transform: rotate(180deg); }
+
+    .div { display: flex; align-items: center; gap: .9rem; margin: .1rem 0 1.1rem; }
+    .div::before, .div::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.1); }
+    .div span { font-size: .75rem; color: rgba(255,255,255,.35); white-space: nowrap; }
+
+    .submit {
+      width: 100%; padding: .85rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none; border-radius: 10px;
+      color: #fff; font-size: .95rem; font-weight: 600;
+      cursor: pointer; margin-top: .75rem;
+      letter-spacing: .02em;
+      transition: opacity .2s, transform .15s;
+    }
+    .submit:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+    .submit:active:not(:disabled) { transform: translateY(0); }
+    .submit:disabled { opacity: .38; cursor: not-allowed; }
+
+    .warn { font-size: .75rem; color: #fc814a; text-align: center; margin-top: .5rem; }
+
+    .summary { animation: fi .35s ease; }
+    .sum-title { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 1.1rem; }
+    .sum-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+    .sum-label { font-size: .8rem; color: rgba(255,255,255,.45); min-width: 64px; }
+    .tag {
+      display: inline-block;
+      background: rgba(102,126,234,.25);
+      border: 1px solid rgba(102,126,234,.4);
+      border-radius: 6px; padding: 3px 10px;
+      font-size: .82rem; color: #c0c8ff;
+    }
+    .sum-val { font-size: .92rem; font-weight: 500; }
+
+    .reset-btn {
+      margin-top: 1.4rem;
+      background: none; border: none;
+      color: rgba(255,255,255,.38);
+      font-size: .82rem; cursor: pointer;
+      text-decoration: underline; text-underline-offset: 3px; padding: 0;
+    }
+    .reset-btn:hover { color: rgba(255,255,255,.7); }
+
+    @keyframes fi { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="card">
+    <div class="hdr">
+      <span class="hdr-icon">✈️</span>
+      <h1>Planifiez votre voyage</h1>
+      <p>Choisissez votre itinéraire et votre date de départ</p>
+    </div>
+
+    <template v-if="!submitted">
+      <!-- Ville de départ -->
+      <div :class="['fg', touched.depart && !model.depart ? 'err' : '']">
+        <label for="depart">Ville de départ</label>
+        <div class="iw">
+          <span class="ic">📍</span>
+          <select id="depart" v-model="model.depart" @blur="touch('depart')">
+            <option value="" disabled>Sélectionnez une ville…</option>
+            <option v-for="city in cities" :key="city" :value="city" :disabled="city === model.arrivee">
+              {{ city }}
+            </option>
+          </select>
+        </div>
+        <p class="emsg" v-if="touched.depart && !model.depart">Veuillez sélectionner une ville de départ.</p>
+      </div>
+
+      <!-- Bouton swap -->
+      <div class="swap-row">
+        <button class="swap-btn" type="button" @click="swap" title="Inverser les villes">⇅</button>
+      </div>
+
+      <!-- Ville d'arrivée -->
+      <div :class="['fg', touched.arrivee && !model.arrivee ? 'err' : '']">
+        <label for="arrivee">Ville d'arrivée</label>
+        <div class="iw">
+          <span class="ic">🏁</span>
+          <select id="arrivee" v-model="model.arrivee" @blur="touch('arrivee')">
+            <option value="" disabled>Sélectionnez une ville…</option>
+            <option v-for="city in cities" :key="city" :value="city" :disabled="city === model.depart">
+              {{ city }}
+            </option>
+          </select>
+        </div>
+        <p class="emsg" v-if="touched.arrivee && !model.arrivee">Veuillez sélectionner une ville d'arrivée.</p>
+      </div>
+
+      <div class="div"><span>Quand partez-vous ?</span></div>
+
+      <!-- Date de départ -->
+      <div :class="['fg', touched.dateDepart && !model.dateDepart ? 'err' : '']">
+        <label for="dateDepart">Date de départ</label>
+        <div class="iw">
+          <span class="ic">📅</span>
+          <input
+            type="date"
+            id="dateDepart"
+            v-model="model.dateDepart"
+            :min="today"
+            @blur="touch('dateDepart')"
+          />
+        </div>
+        <p class="emsg" v-if="touched.dateDepart && !model.dateDepart">Veuillez choisir une date valide.</p>
+      </div>
+
+      <p class="warn" v-if="sameCity">La ville de départ et d'arrivée ne peuvent pas être identiques.</p>
+
+      <button class="submit" :disabled="!isValid" @click="submit">Rechercher des vols →</button>
+    </template>
+
+    <!-- Récapitulatif -->
+    <div class="summary" v-else>
+      <p class="sum-title">Récapitulatif du trajet</p>
+      <div class="sum-row">
+        <span class="sum-label">Départ</span>
+        <span class="tag">📍 {{ model.depart }}</span>
+      </div>
+      <div class="sum-row">
+        <span class="sum-label">Arrivée</span>
+        <span class="tag">🏁 {{ model.arrivee }}</span>
+      </div>
+      <div class="sum-row">
+        <span class="sum-label">Date</span>
+        <span class="sum-val">{{ formattedDate }}</span>
+      </div>
+      <br />
+      <button class="reset-btn" @click="reset">← Modifier la recherche</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+  const { createApp, ref, computed, reactive } = Vue;
+
+  createApp({
+    setup() {
+      const cities = [
+        'Montréal', 'Toronto', 'Vancouver', 'Ottawa', 'Québec',
+        'Calgary', 'Edmonton', 'Winnipeg', 'Halifax', 'Victoria',
+        'Paris', 'Londres', 'New York', 'Los Angeles', 'Miami',
+        'Barcelone', 'Rome', 'Tokyo', 'Sydney', 'Dubaï',
+      ];
+
+      const today = new Date().toISOString().split('T')[0];
+      const submitted = ref(false);
+      const formattedDate = ref('');
+
+      const model = reactive({ depart: '', arrivee: '', dateDepart: '' });
+      const touched = reactive({ depart: false, arrivee: false, dateDepart: false });
+
+      const sameCity = computed(() =>
+        model.depart && model.arrivee && model.depart === model.arrivee
+      );
+
+      const isValid = computed(() =>
+        model.depart && model.arrivee && model.dateDepart && !sameCity.value
+      );
+
+      const touch = (field) => { touched[field] = true; };
+
+      const swap = () => {
+        const tmp = model.depart;
+        model.depart = model.arrivee;
+        model.arrivee = tmp;
+      };
+
+      const submit = () => {
+        touched.depart = true;
+        touched.arrivee = true;
+        touched.dateDepart = true;
+        if (!isValid.value) return;
+        const d = new Date(model.dateDepart + 'T00:00:00');
+        formattedDate.value = d.toLocaleDateString('fr-CA', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        });
+        submitted.value = true;
+      };
+
+      const reset = () => { submitted.value = false; };
+
+      return { cities, today, model, touched, sameCity, isValid, submitted, formattedDate, touch, swap, submit, reset };
+    },
+  }).mount('#app');
+</script>
+</body>
+</html>
