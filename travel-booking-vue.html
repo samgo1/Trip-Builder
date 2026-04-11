@@ -157,7 +157,7 @@
           <span class="ic">📍</span>
           <select id="depart" v-model="model.depart" @blur="touch('depart')">
             <option value="" disabled>Sélectionnez une ville…</option>
-            <option v-for="city in cities" :key="city" :value="city" :disabled="city === model.arrivee">
+            <option v-for="city in cities" :key="city" :value="city" :disabled="city === model.arrival">
               {{ city }}
             </option>
           </select>
@@ -171,18 +171,18 @@
       </div>
 
       <!-- Ville d'arrivée -->
-      <div :class="['fg', touched.arrivee && !model.arrivee ? 'err' : '']">
-        <label for="arrivee">Ville d'arrivée</label>
+      <div :class="['fg', touched.arrival && !model.arrival ? 'err' : '']">
+        <label for="arrival">Ville d'arrivée</label>
         <div class="iw">
           <span class="ic">🏁</span>
-          <select id="arrivee" v-model="model.arrivee" @blur="touch('arrivee')">
+          <select id="arrival" v-model="model.arrival" @blur="touch('arrival')">
             <option value="" disabled>Sélectionnez une ville…</option>
             <option v-for="city in cities" :key="city" :value="city" :disabled="city === model.depart">
               {{ city }}
             </option>
           </select>
         </div>
-        <p class="emsg" v-if="touched.arrivee && !model.arrivee">Veuillez sélectionner une ville d'arrivée.</p>
+        <p class="emsg" v-if="touched.arrival && !model.arrival">Veuillez sélectionner une ville d'arrivée.</p>
       </div>
 
       <div class="div"><span>Quand partez-vous ?</span></div>
@@ -217,7 +217,7 @@
       </div>
       <div class="sum-row">
         <span class="sum-label">Arrivée</span>
-        <span class="tag">🏁 {{ model.arrivee }}</span>
+        <span class="tag">🏁 {{ model.arrival }}</span>
       </div>
       <div class="sum-row">
         <span class="sum-label">Date</span>
@@ -236,7 +236,7 @@
   createApp({
     setup() {
       const cities = [
-        'Montréal', 'Toronto', 'Vancouver', 'Ottawa', 'Québec',
+        'Montreal', 'Toronto', 'Vancouver', 'Ottawa', 'Québec',
         'Calgary', 'Edmonton', 'Winnipeg', 'Halifax', 'Victoria',
         'Paris', 'Londres', 'New York', 'Los Angeles', 'Miami',
         'Barcelone', 'Rome', 'Tokyo', 'Sydney', 'Dubaï',
@@ -246,34 +246,55 @@
       const submitted = ref(false);
       const formattedDate = ref('');
 
-      const model = reactive({ depart: '', arrivee: '', dateDepart: '' });
-      const touched = reactive({ depart: false, arrivee: false, dateDepart: false });
+      const model = reactive({ depart: '', arrival: '', dateDepart: '' });
+      const touched = reactive({ depart: false, arrival: false, dateDepart: false });
 
       const sameCity = computed(() =>
-        model.depart && model.arrivee && model.depart === model.arrivee
+        model.depart && model.arrival && model.depart === model.arrival
       );
 
       const isValid = computed(() =>
-        model.depart && model.arrivee && model.dateDepart && !sameCity.value
+        model.depart && model.arrival && model.dateDepart && !sameCity.value
       );
 
       const touch = (field) => { touched[field] = true; };
 
       const swap = () => {
         const tmp = model.depart;
-        model.depart = model.arrivee;
-        model.arrivee = tmp;
+        model.depart = model.arrival;
+        model.arrival = tmp;
       };
 
-      const submit = () => {
+      const submit = async () => {
         touched.depart = true;
-        touched.arrivee = true;
+        touched.arrival = true;
         touched.dateDepart = true;
+
         if (!isValid.value) return;
+
         const d = new Date(model.dateDepart + 'T00:00:00');
         formattedDate.value = d.toLocaleDateString('fr-CA', {
           weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
         });
+
+        // ---- SEND REQUEST ----
+        try {
+          const response = await fetch('http://localhost:8000/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              depart: model.depart,
+              arrival: model.arrival,
+              dateDepart: model.dateDepart,
+            }),
+          });
+
+          const data = await response.json();
+          console.log('Server response:', data);
+        } catch (err) {
+          console.error('Request failed:', err);
+        }
+
         submitted.value = true;
       };
 
