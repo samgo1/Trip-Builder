@@ -81,6 +81,18 @@
 
     .fg.err .iw select, .fg.err .iw input { border-color: rgba(252,129,74,.75); }
 
+    .flight-card {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      font-family: Arial, sans-serif;
+    }
+    .flight-card div {
+      margin-bottom: 4px;
+    }
+
+
     .emsg { font-size: .75rem; color: #fc814a; margin-top: .3rem; padding-left: 2px; }
 
     .swap-row { display: flex; justify-content: center; margin: -.2rem 0 .4rem; }
@@ -211,18 +223,12 @@
     <!-- Récapitulatif -->
     <div class="summary" v-else>
       <p class="sum-title">Récapitulatif du trajet</p>
-      <div class="sum-row">
-        <span class="sum-label">Départ</span>
-        <span class="tag">📍 {{ model.depart }}</span>
-      </div>
-      <div class="sum-row">
-        <span class="sum-label">Arrivée</span>
-        <span class="tag">🏁 {{ model.arrival }}</span>
-      </div>
-      <div class="sum-row">
-        <span class="sum-label">Date</span>
-        <span class="sum-val">{{ formattedDate }}</span>
-      </div>
+        <div v-for="flight in flights" :key="flight.number" class="flight-card">
+          <div>{{ flight.airline }}, {{ flight.number }}</div>
+          <div>{{ flight.departure_time }}, {{ flight.departure_airport }}</div>
+          <div>{{ flight.arrival_time }}, {{ flight.arrival_airport }}</div>
+          <div>{{ flight.price }} $</div>
+        </div>
       <br />
       <button class="reset-btn" @click="reset">← Modifier la recherche</button>
     </div>
@@ -250,11 +256,11 @@
       const touched = reactive({ depart: false, arrival: false, dateDepart: false });
 
       const sameCity = computed(() =>
-        model.depart && model.arrival && model.depart === model.arrival
+              model.depart && model.arrival && model.depart === model.arrival
       );
 
       const isValid = computed(() =>
-        model.depart && model.arrival && model.dateDepart && !sameCity.value
+              model.depart && model.arrival && model.dateDepart && !sameCity.value
       );
 
       const touch = (field) => { touched[field] = true; };
@@ -264,6 +270,9 @@
         model.depart = model.arrival;
         model.arrival = tmp;
       };
+
+      // ⭐ NEW: store flights here
+      const flights = ref([]);
 
       const submit = async () => {
         touched.depart = true;
@@ -291,6 +300,10 @@
 
           const data = await response.json();
           console.log('Server response:', data);
+
+          // ⭐ NEW: store flights in Vue variable
+          flights.value = data;
+
         } catch (err) {
           console.error('Request failed:', err);
         }
@@ -300,9 +313,14 @@
 
       const reset = () => { submitted.value = false; };
 
-      return { cities, today, model, touched, sameCity, isValid, submitted, formattedDate, touch, swap, submit, reset };
+      return {
+        cities, today, model, touched, sameCity, isValid,
+        submitted, formattedDate, touch, swap, submit, reset,
+        flights   // ⭐ make flights available to template
+      };
     },
   }).mount('#app');
 </script>
+
 </body>
 </html>
